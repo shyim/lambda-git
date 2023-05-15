@@ -24,13 +24,23 @@ RUN cd /root/openssh/openssh-8.8p1/ && \
     make NO_INSTALL_HARDLINKS=YesPlease -j8 && \
     make NO_INSTALL_HARDLINKS=YesPlease install
 
+RUN mkdir -p /root/curl && cd /root/curl && \
+    curl -L --output curl.tgz https://curl.se/download/curl-7.79.1.tar.gz && \
+    tar zxf curl.tgz
+
+RUN cd /root/curl/curl-7.79.1 && \
+    LD_LIBRARY_PATH=/opt/lib && \
+    ./configure CFLAGS="-I/opt/include" --prefix=/opt --with-ldflags="-L/opt/lib" --with-openssl=/opt && \
+    make NO_INSTALL_HARDLINKS=YesPlease -j8 && \
+    make NO_INSTALL_HARDLINKS=YesPlease install
+
 RUN mkdir -p /root/git && cd /root/git && \
     curl -L --output git.tgz https://www.kernel.org/pub/software/scm/git/git-${GIT_VERSION}.tar.gz && \
     tar zxf git.tgz
 
 RUN cd /root/git/git-${GIT_VERSION} && \
     LD_LIBRARY_PATH=/opt/lib && \
-    ./configure CFLAGS="-I/opt/include" --prefix=/opt --with-ldflags="-L/opt/lib" && \
+    ./configure CFLAGS="-I/opt/include" --prefix=/opt --with-ldflags="-L/opt/lib" --with-curl=/opt && \
     make NO_INSTALL_HARDLINKS=YesPlease -j8 && \
     make NO_INSTALL_HARDLINKS=YesPlease install
 

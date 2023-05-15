@@ -5,13 +5,13 @@ ROOTDIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../")
 export ROOTDIR
 cd "$ROOTDIR"
 
-BUCKET_PREFIX="lupin-lambda-git-"
+BUCKET_PREFIX="shyim-lambda-git-"
 
 source "./includes/utils.sh"
 source "./includes/aws_utils.sh"
 
 step "Ensuring S3 buckets exist in all available regions"
-REGIONS="$(list_aws_regions)" || fatal 131 "Unable to determine a list of AWS regions"
+REGIONS="eu-central-1" || fatal 131 "Unable to determine a list of AWS regions"
 REGION_COUNT=$(echo $REGIONS | wc -w | xargs)
 info "Found ${REGION_COUNT} regions"
 

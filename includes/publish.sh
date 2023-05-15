@@ -5,7 +5,7 @@ ROOTDIR=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../")
 export ROOTDIR
 cd "$ROOTDIR"
 
-BUCKET_PREFIX="lupin-lambda-git-"
+BUCKET_PREFIX="shyim-lambda-git-"
 
 source "./includes/utils.sh"
 source "./includes/aws_utils.sh"
@@ -23,13 +23,13 @@ else
     REVISION="-${REVISION}"
 fi
 
-LAYER_PREFIX="lambda-git-"
+LAYER_PREFIX="shyim-git-"
 S3_FILENAME="layer-${GIT_VERSION}${REVISION}-${ARCH}.zip"
 DESCRIPTION="Git ${GIT_VERSION}, OpenSSH and OpenSSL for ${ARCH} AWS Lambdas"
-ARM_SUPPORTED_REGIONS="us-east-1 us-east-2 us-west-2 eu-central-1 eu-west-1 eu-west-1 ap-south-1 ap-southeast-1 ap-southeast-2 ap-northeast-1"
+ARM_SUPPORTED_REGIONS="eu-central-1"
 
 if [[ "${ARCH}" == "x86_64" ]]; then
-    REGIONS="$(list_aws_regions)" || fatal 131 "Unable to determine a list of AWS regions"
+    REGIONS="$ARM_SUPPORTED_REGIONS"
 elif [[ "${ARCH}" == "arm64" ]]; then
     REGIONS="$ARM_SUPPORTED_REGIONS"
 else
@@ -43,18 +43,6 @@ info "Uploading layer to S3 on ${FIRST_REGION}"
 aws --region $FIRST_REGION s3api get-object-acl --bucket "${BUCKET_PREFIX}${FIRST_REGION}" --key releases/${S3_FILENAME} --output text >/dev/null 2>&1 && warn "Layer already exists in ${FIRST_REGION}, skipping upload" \
     || aws --region ${FIRST_REGION} s3api put-object --bucket "${BUCKET_PREFIX}${FIRST_REGION}" --key "releases/${S3_FILENAME}" --body "${ROOTDIR}/outputs/layer-git-${GIT_VERSION}-${ARCH}.zip" >s3_upload.log 2>&1 || fatal 135 "S3 upload failed. See ${ROOTDIR}/s3_upload.log for details."
 rm -f s3_upload.log
-
-# Copy to other regions
-for region in $(echo $REGIONS | cut -d' ' -f2-); do
-    info "Copying to ${region}…"
-    aws --region $region s3api get-object-acl --bucket "${BUCKET_PREFIX}${region}" --key releases/${S3_FILENAME} --output text >/dev/null 2>&1 && warn "Layer already exists in ${region}, skipping upload" \
-        || aws --region $region s3api copy-object \
-            --region $region \
-            --copy-source "${BUCKET_PREFIX}${FIRST_REGION}/releases/${S3_FILENAME}" \
-            --bucket "${BUCKET_PREFIX}${region}" \
-            --key releases/${S3_FILENAME} >s3_copy.log 2>&1 || fatal 136 "S3 upload failed. See ${ROOTDIR}/s3_copy.log for details."
-    rm -f s3_copy.log
-done
 
 # Publish on all regions
 for region in $REGIONS; do
